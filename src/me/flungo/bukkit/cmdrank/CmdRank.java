@@ -61,6 +61,7 @@ public class CmdRank extends JavaPlugin {
 		pm = getServer().getPluginManager();
 		CommandExecutor ce = new Commands(this);
 		getCommand("rankup").setExecutor(ce);
+		getCommand("rankcheck").setExecutor(ce);
 		getCommand("cmdrank").setExecutor(ce);
 		setupConfig();
 		getLogger().log(Level.INFO, "{0} version {1} is enabled.", new Object[]{pdf.getName(), pdf.getVersion()});
@@ -199,6 +200,21 @@ public class CmdRank extends JavaPlugin {
 		}
 		for (String group : matches) {
 			String rankNode = "ranks." + group;
+			//Check if enabled
+			if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1) {
+				p.sendMessage(ChatColor.RED + "Rankup is currently disabled from " + ChatColor.DARK_PURPLE + group);
+				continue;
+			}
+			//Check if the is reranking and if they are allowed to
+			if (checkRerank(p, group)) {
+				p.sendMessage(ChatColor.RED + "You cannot rankup from " + ChatColor.DARK_PURPLE + group + ChatColor.RED + " again");
+				continue;
+			}
+			//Check if the player is subject to cooldown time
+			if (checkCooldown(p, group)) {
+				p.sendMessage(ChatColor.RED + "You must wait before you can rankup from " + ChatColor.DARK_PURPLE + group);
+				continue;
+			}
 			//Check if requirements are met
 			if (!checkRequirements(p, group)) {
 				p.sendMessage(ChatColor.RED + "You must meet the requirments to rankup: " + ChatColor.GOLD + getRequirements(group));
@@ -218,6 +234,17 @@ public class CmdRank extends JavaPlugin {
 			//Announce
 			String announcement = getConfig().getString(rankNode + ".announcement", "{user} has ranked up");
 			getServer().broadcastMessage(ChatColor.AQUA + formatString(announcement, subs));
+			//Set last rankup for player in config
+			long lastrankup = System.currentTimeMillis();
+			getPlayerConfig().set(p.getName() + ".lastrankup", lastrankup);
+			//Add this rankup to the player's rankup history
+			String playerRankNode = p.getName() + ".ranks." + group;
+			getPlayerConfig().set(playerRankNode + ".lastrankup", lastrankup);
+			String playerRankRankupsNode = playerRankNode + ".rankups";
+			int playerRankRankups = getPlayerConfig().getInt(playerRankRankupsNode, 0);
+			getPlayerConfig().set(playerRankRankupsNode, ++playerRankRankups);
+			//Save changes to players.yml
+			savePlayerConfig();
 			//Player has been ranked up, set the flag
 			rankedup = true;
 		}
@@ -301,6 +328,38 @@ public class CmdRank extends JavaPlugin {
 		if (getConfig().getBoolean("use-requirements.hunger", false) && getConfig().getInt(reqNode + ".hunger", 0) > 0) {
 			p.setFoodLevel(p.getFoodLevel() - getConfig().getInt(reqNode + ".hunger"));
 		}
+	}
+	
+	private boolean checkCooldown(Player p, String group) {
+		long cooldown = getConfig().getLong("cooldown", 0L);
+		if (cooldown > 0
+				&& getPlayerConfig().getLong(p.getName() + ".lastrankup", 0L)
+				> (System.currentTimeMillis() - cooldown * 1000L)) {
+			return true;
+		}
+		long rankCooldown = getConfig().getLong("ranks." + group + ".cooldown", 0L);
+		if (rankCooldown > 0
+				&& getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
+				> (System.currentTimeMillis() - rankCooldown * 1000L)) {
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean checkRerank(Player p, String group) {
+		if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1) {
+			return false;
+		} else if (!getConfig().getBoolean("rerank", true)) {
+			if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) >= 1) {
+				return false;
+			}
+		} else {
+			if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0)
+					>= getConfig().getInt("ranks." + group + ".reranks", 1)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public static String formatString(String message, Map<String, String> subs) {
