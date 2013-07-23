@@ -27,6 +27,8 @@ import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
@@ -41,6 +43,7 @@ public class CmdRank extends JavaPlugin {
 
 	private PluginDescriptionFile pdf;
 	private PluginManager pm;
+	private ConfigAccessor playersCA = null;
 	public static Permission permission = null;
 	public static Economy economy = null;
 	private static HashMap<String, String> colorSubs = new HashMap<>();
@@ -59,8 +62,7 @@ public class CmdRank extends JavaPlugin {
 		CommandExecutor ce = new Commands(this);
 		getCommand("rankup").setExecutor(ce);
 		getCommand("cmdrank").setExecutor(ce);
-		getConfig().options().copyDefaults(true);
-		saveConfig();
+		setupConfig();
 		getLogger().log(Level.INFO, "{0} version {1} is enabled.", new Object[]{pdf.getName(), pdf.getVersion()});
 		colorSubs.put("&0", ChatColor.BLACK.toString());
 		colorSubs.put("&1", ChatColor.DARK_BLUE.toString());
@@ -107,6 +109,55 @@ public class CmdRank extends JavaPlugin {
 
 	public void reload() {
 		reloadConfig();
+		setupConfig();
+	}
+	
+	public void setupConfig() {
+		getConfig().options().copyDefaults(true);
+		getConfig().options().header(pdf.getName() + " Config File");
+		if (!getConfig().contains("ranks")) {
+			ConfigurationSection defaultRank = getConfig().createSection("ranks.default");
+			defaultRank.set("requirements.money", 500);
+			defaultRank.set("requirements.exp", 0);
+			defaultRank.set("requirements.health", 0);
+			defaultRank.set("requirements.hunger", 0);
+			List<String> commands = new ArrayList<>(2);
+			commands.add("pex user {player} group add member");
+			commands.add("pex user {player} group remove {rank}");
+			defaultRank.set("commands", commands);
+			defaultRank.set("announcement", "{player} has ranked up from default to member");
+			defaultRank.set("rerank", true);
+		}
+		saveConfig();
+		playersCA = new ConfigAccessor(this, "player.yml");
+	}
+	
+	public FileConfiguration getPlayerConfig() {
+		if (playersCA == null) {
+			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+		}
+		return playersCA.getConfig();
+	}
+	
+	public void reloadPlayerConfig() {
+		if (playersCA == null) {
+			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+		}
+		playersCA.reloadConfig();
+	}
+	
+	public void savePlayerConfig() {
+		if (playersCA == null) {
+			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+		}
+		playersCA.saveConfig();
+	}
+	
+	public void saveDefaultPlayerConfig() {
+		if (playersCA == null) {
+			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+		}
+		playersCA.saveDefaultConfig();
 	}
 
 	protected Permission getPermissions() {
