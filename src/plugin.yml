@@ -1,6 +1,6 @@
 name: CmdRank
 main: me.flungo.bukkit.cmdrank.CmdRank
-version: 1.0.0
+version: 1.1.0
 author: flungo
 description: >
              Ranks up players by executing commands
@@ -11,6 +11,10 @@ commands:
     description: Rankup a user based on defined rules and requirements
     usage: |
         /<command> - Ranks up the player to their next rank
+  rankcheck:
+    description: List all rankups that will be executed when /rankup is executed with their requirements
+    usage: |
+        /<command> - Shows all rankups that will be attempted when /rankup is executed and their requirements
   cmdrank:
     description: Admin command for controlling CmdRank
     usage: |
