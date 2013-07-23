@@ -174,6 +174,21 @@ public class CmdRank extends JavaPlugin {
 		}
 		return matches;
 	}
+	
+	public void showMatches(Player p) {
+		List<String> matches = getMatches(p);
+		if (matches.isEmpty()) {
+			p.sendMessage(ChatColor.RED + "Your current rank does not allow you to rankup.");
+		} else {
+			String[] messages = new String[matches.size() * 2];
+			int line = 0;
+			for (String group : matches) {
+				messages[line++] = ChatColor.RED + "Rankup from " + group + ":";
+				messages[line++] = ChatColor.DARK_GREEN + "Requirements: " + ChatColor.GOLD + getRequirements(group);
+			}
+			p.sendMessage(messages);
+		}
+	}
 
 	public boolean rankup(Player p) {
 		boolean rankedup = false;
