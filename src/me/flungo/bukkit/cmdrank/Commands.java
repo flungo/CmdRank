@@ -70,6 +70,7 @@ class Commands implements CommandExecutor {
 				switch (strings[0]) {
 					case "reload":
 						plugin.reload();
+						cs.sendMessage(ChatColor.GREEN + "CmdRank Reloaded.");
 						return true;
 				}
 		}
