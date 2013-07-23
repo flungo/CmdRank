@@ -127,7 +127,8 @@ public class CmdRank extends JavaPlugin {
 			commands.add("pex user {player} group remove {rank}");
 			defaultRank.set("commands", commands);
 			defaultRank.set("announcement", "{player} has ranked up from default to member");
-			defaultRank.set("rerank", true);
+			defaultRank.set("cooldown", 0);
+			defaultRank.set("reranks", 0);
 		}
 		saveConfig();
 		playersCA = new ConfigAccessor(this, "player.yml");
