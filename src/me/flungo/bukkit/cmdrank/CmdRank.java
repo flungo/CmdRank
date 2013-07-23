@@ -207,7 +207,7 @@ public class CmdRank extends JavaPlugin {
 				continue;
 			}
 			//Check if the is reranking and if they are allowed to
-			if (checkRerank(p, group)) {
+			if (!checkRerank(p, group)) {
 				p.sendMessage(ChatColor.RED + "You cannot rankup from " + ChatColor.DARK_PURPLE + group + ChatColor.RED + " again");
 				continue;
 			}
@@ -332,6 +332,9 @@ public class CmdRank extends JavaPlugin {
 	}
 	
 	private boolean checkCooldown(Player p, String group) {
+		if (permission.has(p, "cmdrank.bypass.cooldown")) {
+			return false;
+		}
 		long cooldown = getConfig().getLong("cooldown", 0L);
 		if (cooldown > 0
 				&& getPlayerConfig().getLong(p.getName() + ".lastrankup", 0L)
@@ -348,8 +351,11 @@ public class CmdRank extends JavaPlugin {
 	}
 	
 	private boolean checkRerank(Player p, String group) {
-		if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1) {
+		if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1
+				&& !permission.has(p, "cmdrank.bypass.disabled")) {
 			return false;
+		} else if (permission.has(p, "cmdrank.bypass.reranks")) {
+			return true;
 		} else if (!getConfig().getBoolean("rerank", true)) {
 			if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) >= 1) {
 				return false;

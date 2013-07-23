@@ -24,3 +24,9 @@ permissions:
     description: Access to admin commands.
   cmdrank.rankup:
     description: Allows player to use the command.
+  cmdrank.bypass.cooldown:
+    description: Bypass the cooldown time with this permission
+  cmdrank.bypass.disabled:
+    description: Bypass disabled rankups
+  cmdrank.bypass.reranks:
+    description: Bypass rerank lmits
