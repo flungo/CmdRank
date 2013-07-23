@@ -111,7 +111,7 @@ public class CmdRank extends JavaPlugin {
 		reloadConfig();
 		setupConfig();
 	}
-	
+
 	public void setupConfig() {
 		getConfig().options().copyDefaults(true);
 		getConfig().options().header(pdf.getName() + " Config File");
@@ -131,28 +131,28 @@ public class CmdRank extends JavaPlugin {
 		saveConfig();
 		playersCA = new ConfigAccessor(this, "player.yml");
 	}
-	
+
 	public FileConfiguration getPlayerConfig() {
 		if (playersCA == null) {
 			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
 		}
 		return playersCA.getConfig();
 	}
-	
+
 	public void reloadPlayerConfig() {
 		if (playersCA == null) {
 			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
 		}
 		playersCA.reloadConfig();
 	}
-	
+
 	public void savePlayerConfig() {
 		if (playersCA == null) {
 			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
 		}
 		playersCA.saveConfig();
 	}
-	
+
 	public void saveDefaultPlayerConfig() {
 		if (playersCA == null) {
 			throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
@@ -164,38 +164,47 @@ public class CmdRank extends JavaPlugin {
 		return permission;
 	}
 
-	public boolean rankup(Player p) {
+	public List<String> getMatches(Player p) {
 		String[] groups = permission.getPlayerGroups(p);
-		boolean rankedup = false, matched = false;
+		List<String> matches = new ArrayList<>(4);
 		for (String group : groups) {
-			String rankNode = "ranks." + group;
-			if (getConfig().contains(rankNode)) {
-				matched = true;
-				//Check if requirements are met
-				if (!checkRequirements(p, group)) {
-					p.sendMessage(ChatColor.RED + "You must meet the requirments to rankup: " + ChatColor.GOLD + getRequirements(group));
-					continue;
-				}
-				//Use requirements where appropriate
-				useRequirments(p, group);
-				//Setup substitutions
-				HashMap<String, String> subs = new HashMap<>();
-				subs.put("player", p.getName());
-				subs.put("rank", group);
-				//Execute commands
-				List<String> commands = getConfig().getStringList(rankNode + ".commands");
-				for (String command : commands) {
-					getServer().dispatchCommand(Bukkit.getConsoleSender(), formatString(command, subs));
-				}
-				//Announce
-				String announcement = getConfig().getString(rankNode + ".announcement", "{user} has ranked up");
-				getServer().broadcastMessage(ChatColor.AQUA + formatString(announcement, subs));
-				//Player has been ranked up, set the flag
-				rankedup = true;
+			if (getConfig().contains("ranks." + group)) {
+				matches.add(group);
 			}
 		}
-		if (!matched) {
+		return matches;
+	}
+
+	public boolean rankup(Player p) {
+		boolean rankedup = false;
+		List<String> matches = getMatches(p);
+		if (matches.isEmpty()) {
 			p.sendMessage(ChatColor.RED + "Your current rank does not allow you to rankup.");
+			return false;
+		}
+		for (String group : matches) {
+			String rankNode = "ranks." + group;
+			//Check if requirements are met
+			if (!checkRequirements(p, group)) {
+				p.sendMessage(ChatColor.RED + "You must meet the requirments to rankup: " + ChatColor.GOLD + getRequirements(group));
+				continue;
+			}
+			//Use requirements where appropriate
+			useRequirments(p, group);
+			//Setup substitutions
+			HashMap<String, String> subs = new HashMap<>();
+			subs.put("player", p.getName());
+			subs.put("rank", group);
+			//Execute commands
+			List<String> commands = getConfig().getStringList(rankNode + ".commands");
+			for (String command : commands) {
+				getServer().dispatchCommand(Bukkit.getConsoleSender(), formatString(command, subs));
+			}
+			//Announce
+			String announcement = getConfig().getString(rankNode + ".announcement", "{user} has ranked up");
+			getServer().broadcastMessage(ChatColor.AQUA + formatString(announcement, subs));
+			//Player has been ranked up, set the flag
+			rankedup = true;
 		}
 		return rankedup;
 	}
