@@ -1,0 +1,30 @@
+#Defined ranks
+ranks:
+  #Use same name as name of rank in permissions plugin
+  default:
+    #What the user must have before they can rankup (Set to 0 to disable)
+    #DO NOT use negative values
+    requirements:
+      money: 500
+      exp: 50
+      health: 10
+      hunger: 10
+    #Commands to execute when ranking up the player
+    commands:
+      # Example using pex ladder
+      - "pex promote {player} ladder"
+      # Example adding a user to the group member then removing from their old group in 2 commands
+      - "pex user {player} group add member"
+      - "pex user {player} group remove {rank}"
+      # Example of giving them a rankup gift
+      - "give {player} diamond 2"
+    announcement: "{player} has ranked up from default to member"
+use-requirements:
+  money: true
+  exp: true
+  health: false
+  hunger:
+#Is the plugin enabled (i.e. Can players use it)
+enable: true
+#Display extra information in the console for debugging
+debug: false

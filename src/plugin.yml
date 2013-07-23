@@ -1,0 +1,22 @@
+name: CmdRank
+main: me.flungo.bukkit.cmdrank.CmdRank
+version: 1.0.0
+author: flungo
+description: >
+             Ranks up players by executing commands
+depend:
+  - Vault
+commands:
+  rankup:
+    description: Rankup a user based on defined rules and requirements
+    usage: |
+        /<command> - Ranks up the player to their next rank
+  cmdrank:
+    description: Admin command for controlling CmdRank
+    usage: |
+        /<command> reload - Reloads the config file
+permissions:
+  cmdrank.admin:
+    description: Access to admin commands.
+  cmdrank.rankup:
+    description: Allows player to use the command.
