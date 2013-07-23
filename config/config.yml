@@ -19,8 +19,10 @@ ranks:
       # Example of giving them a rankup gift
       - "give {player} diamond 2"
     announcement: "{player} has ranked up from default to member"
-    #Can a player match this rank more than once?
-    rerank: true
+    #Minimum time in seconds between rankups that match this (0 to disable)
+    cooldown: 0
+    #Maximum number of times a player can use this rankup (0 will disable rank, 1 is default)
+    reranks: 1
 #Will requirements be used (true) or just checked (false)
 use-requirements:
   money: true
