@@ -114,10 +114,10 @@ public class CmdRank extends JavaPlugin {
 	}
 
 	public void setupConfig() {
-		getConfig().options().copyDefaults(true);
 		getConfig().options().header(pdf.getName() + " Config File");
 		if (!getConfig().contains("ranks")) {
 			ConfigurationSection defaultRank = getConfig().createSection("ranks.default");
+			defaultRank.set("description", "Rank you up from default to member");
 			defaultRank.set("requirements.money", 500);
 			defaultRank.set("requirements.exp", 0);
 			defaultRank.set("requirements.health", 0);
@@ -130,6 +130,7 @@ public class CmdRank extends JavaPlugin {
 			defaultRank.set("cooldown", 0);
 			defaultRank.set("reranks", 0);
 		}
+		getConfig().options().copyDefaults(true);
 		saveConfig();
 		playersCA = new ConfigAccessor(this, "player.yml");
 	}
@@ -182,13 +183,31 @@ public class CmdRank extends JavaPlugin {
 		if (matches.isEmpty()) {
 			p.sendMessage(ChatColor.RED + "Your current rank does not allow you to rankup.");
 		} else {
-			String[] messages = new String[matches.size() * 2];
+			List<String> messages = new ArrayList<>(matches.size() * 2 + 2);
 			int line = 0;
-			for (String group : matches) {
-				messages[line++] = ChatColor.RED + "Rankup from " + group + ":";
-				messages[line++] = ChatColor.DARK_GREEN + "Requirements: " + ChatColor.GOLD + getRequirements(group);
+			messages.add(ChatColor.YELLOW + "Available Rankups");
+			messages.add(ChatColor.YELLOW + "=================");
+			if (getCooldown(p) > 0) {
+				messages.add(ChatColor.DARK_AQUA + "Remaining cooldown: " + ChatColor.GREEN + (int) (getCooldown(p) / 1000L) + "s");
 			}
-			p.sendMessage(messages);
+			for (String group : matches) {
+				messages.add(null);
+				messages.add(ChatColor.RED + "Rankup from " + ChatColor.DARK_PURPLE + group + ChatColor.RED + ":");
+				if (getConfig().contains("ranks." + group + ".description")) {
+					messages.add(ChatColor.DARK_GREEN + "Description: " + ChatColor.GOLD + getConfig().getString("ranks." + group + ".description"));
+				}
+				messages.add(ChatColor.DARK_GREEN + "Requirements: " + ChatColor.GOLD + getRequirements(group));
+				if (getCooldown(p, group) > 0) {
+					messages.add(ChatColor.DARK_GREEN + "Remaining cooldown: " + ChatColor.GOLD + (int) (getCooldown(p, group) / 1000L) + "s");
+				}
+				if (getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks()) > 1) {
+					messages.add(ChatColor.DARK_GREEN + "Remaining uses: " + ChatColor.GOLD + getRemainingReranks(p, group));
+				}
+				if (isRankDisabled(group)) {
+					messages.add(ChatColor.DARK_GREEN + "Disabled: " + ChatColor.GOLD + "true");
+				}
+			}
+			p.sendMessage(messages.toArray(new String[messages.size()]));
 		}
 	}
 
@@ -202,7 +221,7 @@ public class CmdRank extends JavaPlugin {
 		for (String group : matches) {
 			String rankNode = "ranks." + group;
 			//Check if enabled
-			if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1 && !permission.has(p, "cmdrank.bypass.disabled")) {
+			if (isRankDisabled(p, group)) {
 				p.sendMessage(ChatColor.RED + "Rankup is currently disabled from " + ChatColor.DARK_PURPLE + group);
 				continue;
 			}
@@ -331,50 +350,102 @@ public class CmdRank extends JavaPlugin {
 		}
 	}
 
+	private long getCooldown(Player p) {
+		if (permission.has(p, "cmdrank.bypass.cooldown")
+				|| getConfig().getLong("cooldown", 0L) <= 0) {
+			return 0;
+		}
+		long cooldown = getPlayerConfig().getLong(p.getName() + ".lastrankup", 0L)
+				- System.currentTimeMillis() + getConfig().getLong("cooldown", 0L) * 1000L;
+		if (cooldown < 0) {
+			return 0;
+		} else {
+			return cooldown;
+		}
+	}
+
+	private long getCooldown(Player p, String group) {
+		if (permission.has(p, "cmdrank.bypass.cooldown")
+				|| getConfig().getLong("ranks." + group + ".cooldown", 0L) <= 0) {
+			return 0;
+		}
+		long cooldown = getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
+				- System.currentTimeMillis() + getConfig().getLong("ranks." + group + ".cooldown", 0L) * 1000L;
+		if (cooldown < 0) {
+			return 0;
+		} else {
+			return cooldown;
+		}
+	}
+
 	private boolean checkCooldown(Player p, String group) {
 		if (permission.has(p, "cmdrank.bypass.cooldown")) {
 			return false;
 		}
-		long cooldown = getConfig().getLong("cooldown", 0L);
-		if (cooldown > 0
-				&& getPlayerConfig().getLong(p.getName() + ".lastrankup", 0L)
-				> (System.currentTimeMillis() - cooldown * 1000L)) {
-			return true;
-		}
-		long rankCooldown = getConfig().getLong("ranks." + group + ".cooldown", 0L);
-		if (rankCooldown > 0
-				&& getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
-				> (System.currentTimeMillis() - rankCooldown * 1000L)) {
+		if (getCooldown(p) > 0 || getCooldown(p, group) > 0) {
 			return true;
 		}
 		return false;
 	}
 
-	private boolean checkRerank(Player p, String group) {
-		if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1) {
+	private boolean isRankDisabled(String group) {
+		return getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks()) == 0;
+	}
+
+	private boolean isRankDisabled(Player p, String group) {
+		if (isRankDisabled(group)) {
 			if (permission.has(p, "cmdrank.bypass.disabled")) {
-				return true;
-			} else {
 				return false;
+			} else {
+				return true;
 			}
+		} else {
+			return false;
+		}
+	}
+	
+	private int getDefaultReranks() {
+		if (getConfig().getBoolean("rerank", true)) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}
+
+	private int getRemainingReranks(Player p, String group) {
+		if (getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks()) >=0) {
+			if (!getConfig().getBoolean("rerank", true)
+					|| getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) > 0) {
+				int remaining = getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks())
+						- getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0);
+				if (remaining < 0) {
+					return 0;
+				} else {
+					return remaining;
+				}
+			}
+		}
+		return -1;
+	}
+
+	private boolean checkRerank(Player p, String group) {
+		if (isRankDisabled(group)) {
+			return isRankDisabled(p, group);
 		}
 		if (permission.has(p, "cmdrank.bypass.reranks")) {
 			return true;
 		}
-		if (!getConfig().getBoolean("rerank", true)
-				&& getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) >= 1) {
-			return false;
-		}
-		if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0)
-				>= getConfig().getInt("ranks." + group + ".reranks", 1)) {
+		if (getRemainingReranks(p, group) == 0) {
 			return false;
 		}
 		return true;
 	}
 
 	public static String formatString(String message, Map<String, String> subs) {
-		for (Entry<String, String> sub : subs.entrySet()) {
-			message = message.replace("{" + sub.getKey() + "}", sub.getValue());
+		if (subs != null) {
+			for (Entry<String, String> sub : subs.entrySet()) {
+				message = message.replace("{" + sub.getKey() + "}", sub.getValue());
+			}
 		}
 		for (Entry<String, String> sub : colorSubs.entrySet()) {
 			message = message.replace(sub.getKey(), sub.getValue());
