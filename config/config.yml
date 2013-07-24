@@ -20,10 +20,12 @@ ranks:
       # Example of giving them a rankup gift
       - "give {player} diamond 2"
     announcement: "{player} has ranked up from default to member"
-    #Minimum time in seconds between rankups that match this (0 to disable)
+    #Minimum time in seconds between rankups that match this
+    #(0 to disable)
     cooldown: 0
-    #Maximum number of times a player can use this rankup (0 will disable rank, 1 is default)
-    reranks: 1
+    #Maximum number of times a player can use this rankup
+    #(0 will disable rank, negative will make infinite, -1 is default, n > 0 will allow n uses)
+    reranks: -1
 #Will requirements be used (true) or just checked (false)
 use-requirements:
   money: true
@@ -32,7 +34,9 @@ use-requirements:
   hunger: false
 #Minimum time in seconds between rankups (0 to disable)
 cooldown: 0
-#Can a player use any rank match twice? Be careful if players are demoted and this is set to false. Provides better compatability with some permissions plugins when set to false.
+#Can a player use any rank match more than once?
+#Be careful if players are demoted and this is set to false.
+#Provides better compatability with some permissions plugins when set to false.
 rerank: true
 #Is the plugin enabled (i.e. Can players use it)
 enable: true
