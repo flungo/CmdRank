@@ -176,7 +176,7 @@ public class CmdRank extends JavaPlugin {
 		}
 		return matches;
 	}
-	
+
 	public void showMatches(Player p) {
 		List<String> matches = getMatches(p);
 		if (matches.isEmpty()) {
@@ -202,7 +202,7 @@ public class CmdRank extends JavaPlugin {
 		for (String group : matches) {
 			String rankNode = "ranks." + group;
 			//Check if enabled
-			if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1) {
+			if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1 && !permission.has(p, "cmdrank.bypass.disabled")) {
 				p.sendMessage(ChatColor.RED + "Rankup is currently disabled from " + ChatColor.DARK_PURPLE + group);
 				continue;
 			}
@@ -330,7 +330,7 @@ public class CmdRank extends JavaPlugin {
 			p.setFoodLevel(p.getFoodLevel() - getConfig().getInt(reqNode + ".hunger"));
 		}
 	}
-	
+
 	private boolean checkCooldown(Player p, String group) {
 		if (permission.has(p, "cmdrank.bypass.cooldown")) {
 			return false;
@@ -349,22 +349,25 @@ public class CmdRank extends JavaPlugin {
 		}
 		return false;
 	}
-	
+
 	private boolean checkRerank(Player p, String group) {
-		if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1
-				&& !permission.has(p, "cmdrank.bypass.disabled")) {
-			return false;
-		} else if (permission.has(p, "cmdrank.bypass.reranks")) {
+		if (getConfig().getInt("ranks." + group + ".reranks", 1) < 1) {
+			if (permission.has(p, "cmdrank.bypass.disabled")) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		if (permission.has(p, "cmdrank.bypass.reranks")) {
 			return true;
-		} else if (!getConfig().getBoolean("rerank", true)) {
-			if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) >= 1) {
-				return false;
-			}
-		} else {
-			if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0)
-					>= getConfig().getInt("ranks." + group + ".reranks", 1)) {
-				return false;
-			}
+		}
+		if (!getConfig().getBoolean("rerank", true)
+				&& getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) >= 1) {
+			return false;
+		}
+		if (getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0)
+				>= getConfig().getInt("ranks." + group + ".reranks", 1)) {
+			return false;
 		}
 		return true;
 	}
