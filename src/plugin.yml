@@ -27,6 +27,6 @@ permissions:
   cmdrank.bypass.cooldown:
     description: Bypass the cooldown time with this permission
   cmdrank.bypass.disabled:
-    description: Bypass disabled rankups
+    description: Bypass disabled rankups - there is no rankup limit for disabled rankups
   cmdrank.bypass.reranks:
     description: Bypass rerank lmits
