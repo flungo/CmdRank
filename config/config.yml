@@ -1,7 +1,8 @@
 #Defined ranks
 ranks:
-  #Use same name as name of rank in permissions plugin
+  #Use same name as name of rank in permissions plugin - all subnodes of the rankname are optional
   default:
+    description: You will rank up from default to member and receive 2 diamonds
     #What the user must have before they can rankup (Set to 0 to disable)
     #DO NOT use negative values
     requirements:
