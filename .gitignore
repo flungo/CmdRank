@@ -1,0 +1,10 @@
+#################
+## Netbeans
+#################
+
+dist
+build
+nbproject/private
+*.tmp
+*.bak
+Thumbs.db
