@@ -272,6 +272,11 @@ public class CmdRank extends JavaPlugin {
 			//Player has been ranked up, set the flag
 			rankedup = true;
 		}
+        if (rankedup) {
+            p.sendMessage(ChatColor.GREEN + "You have rankedup!");
+        } else {
+            p.sendMessage(ChatColor.RED + "You did not rankup.");
+        }
 		return rankedup;
 	}
 
