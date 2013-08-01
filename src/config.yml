@@ -6,8 +6,52 @@ use-requirements:
   hunger: false
 #Minimum time in seconds between rankups (0 to disable)
 cooldown: 0
-#Can a player use any rank match twice? Be careful if players are demoted and this is set to false. Provides better compatability with some permissions plugins when set to false.
+#Can a player use any rank match more than once?
+#Be careful if players are demoted and this is set to false.
+#Provides better compatability with some permissions plugins when set to false.
 rerank: true
+#Hide certain messages to get the feedback for the player just right
+hide-messages:
+  #Messages during /rankup command
+  rankup:
+    #Hide message if no rankup is available
+    not-available: false
+    #Hide message if rankup is disabled
+    disabled: false
+    #Hide message if player cannot rerank
+    rerank: false
+    #Hide message if player must cooldown
+    cooldown: false
+    #Hide message if player does not meet requirements
+    requirments: false
+    #Hide announcement of rankup
+    announcement: false
+    #Hide confirmation of rankup
+    confirmation: false
+  #Messages during /rankcheck command -  note that if not configured or not relevant, lines will be automatically hidden anyway
+  rankcheck:
+    #Hide how long before any rankup can take place
+    global-cooldown: false
+    #Reasons to hide an entire match
+    matches:
+      #Do not show the match if it is disabled
+      disabled: true
+      #Do not show the match if the player cannot rerank to it
+      rerank: true
+      #Do not show the match if the player must wait before ranking up
+      cooldown: false
+      #Do not show the match if the requirements are not met
+      requirements: false
+    #Hide description of rankups
+    description: false
+    #Hide requirements for rankups
+    requirements: false
+    #Hide cooldown for rankup
+    cooldown: false
+    #Hide remaining reranks for rankup
+    reranks: false
+    #Hide disabled status of rankup
+    disabled: false
 #Is the plugin enabled (i.e. Can players use it)
 enable: true
 #Display extra information in the console for debugging
