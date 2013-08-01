@@ -267,7 +267,7 @@ public class CmdRank extends JavaPlugin {
                 }
                 continue;
             }
-            //Check if the is reranking and if they are allowed to
+            //Check if the player is reranking and if they are allowed to
             if (!checkRerank(p, group)) {
                 if (!getConfig().getBoolean("hide-messages.rankup.rerank")) {
                     p.sendMessage(ChatColor.RED + "You cannot rankup from " + ChatColor.DARK_PURPLE + group + ChatColor.RED + " again");
