@@ -23,6 +23,9 @@ ranks:
     #Minimum time in seconds between rankups that match this
     #(0 to disable)
     cooldown: 0
+    #Minimum time in seconds since last rankup
+    #(0 to disable)
+    global-cooldown: 0
     #Maximum number of times a player can use this rankup
     #(0 will disable rank, negative will make infinite, -1 is default, n > 0 will allow n uses)
     reranks: -1

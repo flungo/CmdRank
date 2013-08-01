@@ -119,6 +119,7 @@ public class CmdRank extends JavaPlugin {
 
     public void setupConfig() {
         getConfig().options().header(pdf.getName() + " Config File");
+        // If there aren't any ranks defined, consturct a default rankup for refference
         if (!getConfig().contains("ranks")) {
             ConfigurationSection defaultRank = getConfig().createSection("ranks.default");
             defaultRank.set("description", "Rank you up from default to member");
@@ -132,6 +133,7 @@ public class CmdRank extends JavaPlugin {
             defaultRank.set("commands", commands);
             defaultRank.set("announcement", "{player} has ranked up from default to member");
             defaultRank.set("cooldown", 0);
+            defaultRank.set("global-cooldown", 0);
             defaultRank.set("reranks", 0);
         }
         getConfig().options().copyDefaults(true);
@@ -424,8 +426,16 @@ public class CmdRank extends JavaPlugin {
                 || getConfig().getLong("ranks." + group + ".cooldown", 0L) <= 0) {
             return 0;
         }
-        long cooldown = getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
+        long localcooldown = getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
                 - System.currentTimeMillis() + getConfig().getLong("ranks." + group + ".cooldown", 0L) * 1000L;
+        long globalCooldown = getPlayerConfig().getLong(p.getName() + ".lastrankup", 0L)
+                - System.currentTimeMillis() + getConfig().getLong("ranks." + group + ".global-cooldown", 0L) * 1000L;
+        long cooldown;
+        if (localcooldown > globalCooldown) {
+            cooldown = localcooldown;
+        } else {
+            cooldown = globalCooldown;
+        }
         if (cooldown < 0) {
             return 0;
         } else {
