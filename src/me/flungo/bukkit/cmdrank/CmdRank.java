@@ -426,13 +426,13 @@ public class CmdRank extends JavaPlugin {
                 || getConfig().getLong("ranks." + group + ".cooldown", 0L) <= 0) {
             return 0;
         }
-        long localcooldown = getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
+        long localCooldown = getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
                 - System.currentTimeMillis() + getConfig().getLong("ranks." + group + ".cooldown", 0L) * 1000L;
         long globalCooldown = getPlayerConfig().getLong(p.getName() + ".lastrankup", 0L)
                 - System.currentTimeMillis() + getConfig().getLong("ranks." + group + ".global-cooldown", 0L) * 1000L;
         long cooldown;
-        if (localcooldown > globalCooldown) {
-            cooldown = localcooldown;
+        if (localCooldown > globalCooldown) {
+            cooldown = localCooldown;
         } else {
             cooldown = globalCooldown;
         }
