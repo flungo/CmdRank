@@ -65,7 +65,30 @@ public class CmdRank extends JavaPlugin {
 		getCommand("cmdrank").setExecutor(ce);
 		setupConfig();
 		getLogger().log(Level.INFO, "{0} version {1} is enabled.", new Object[]{pdf.getName(), pdf.getVersion()});
-		colorSubs.put("&0", ChatColor.BLACK.toString());
+		setupColourSubs();
+	}
+
+	private boolean setupPermissions() {
+		getLogger().log(Level.INFO, "Attempting to configure Vault permissions");
+		RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.permission.Permission.class);
+		if (permissionProvider != null) {
+			permission = permissionProvider.getProvider();
+		}
+		return (permission != null);
+	}
+
+	private boolean setupEconomy() {
+		getLogger().log(Level.INFO, "Attempting to configure Vault economy");
+		RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
+		if (economyProvider != null) {
+			economy = economyProvider.getProvider();
+		}
+
+		return (economy != null);
+	}
+    
+    private void setupColourSubs() {
+        colorSubs.put("&0", ChatColor.BLACK.toString());
 		colorSubs.put("&1", ChatColor.DARK_BLUE.toString());
 		colorSubs.put("&2", ChatColor.DARK_GREEN.toString());
 		colorSubs.put("&3", ChatColor.DARK_AQUA.toString());
@@ -87,26 +110,7 @@ public class CmdRank extends JavaPlugin {
 		colorSubs.put("&n", ChatColor.UNDERLINE.toString());
 		colorSubs.put("&o", ChatColor.ITALIC.toString());
 		colorSubs.put("&r", ChatColor.RESET.toString());
-	}
-
-	private boolean setupPermissions() {
-		getLogger().log(Level.INFO, "Attempting to configure Vault permissions");
-		RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.permission.Permission.class);
-		if (permissionProvider != null) {
-			permission = permissionProvider.getProvider();
-		}
-		return (permission != null);
-	}
-
-	private boolean setupEconomy() {
-		getLogger().log(Level.INFO, "Attempting to configure Vault economy");
-		RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(net.milkbowl.vault.economy.Economy.class);
-		if (economyProvider != null) {
-			economy = economyProvider.getProvider();
-		}
-
-		return (economy != null);
-	}
+    }
 
 	public void reload() {
 		reloadConfig();
