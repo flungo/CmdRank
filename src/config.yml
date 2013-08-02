@@ -23,7 +23,7 @@ hide-messages:
     #Hide message if player must cooldown
     cooldown: false
     #Hide message if player does not meet requirements
-    requirments: false
+    requirements: false
     #Hide announcement of rankup
     announcement: false
     #Hide confirmation of rankup
