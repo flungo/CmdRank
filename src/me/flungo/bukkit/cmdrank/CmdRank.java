@@ -16,6 +16,7 @@
  */
 package me.flungo.bukkit.cmdrank;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ public class CmdRank extends JavaPlugin {
     private PluginDescriptionFile pdf;
     private PluginManager pm;
     private ConfigAccessor playersCA = null;
+    public static Metrics metrics = null;
     public static Permission permission = null;
     public static Economy economy = null;
     private static HashMap<String, String> colorSubs = new HashMap<>();
@@ -56,6 +58,7 @@ public class CmdRank extends JavaPlugin {
     @Override
     public void onEnable() {
         pdf = this.getDescription();
+        setupMetrics();
         setupPermissions();
         setupEconomy();
         pm = getServer().getPluginManager();
@@ -66,6 +69,15 @@ public class CmdRank extends JavaPlugin {
         setupConfig();
         getLogger().log(Level.INFO, "{0} version {1} is enabled.", new Object[]{pdf.getName(), pdf.getVersion()});
         setupColourSubs();
+    }
+
+    private void setupMetrics() {
+        try {
+            metrics = new Metrics(this);
+            metrics.start();
+        } catch (IOException e) {
+            // Failed to submit the stats :-(
+        }
     }
 
     private boolean setupPermissions() {
@@ -300,7 +312,7 @@ public class CmdRank extends JavaPlugin {
                 getServer().dispatchCommand(Bukkit.getConsoleSender(), formatString(command, subs));
             }
             //Announce
-            if (!getConfig().getBoolean("hide-messages.rankup.confirmation")) {
+            if (!getConfig().getBoolean("hide-messages.rankup.announcement")) {
                 String announcement = getConfig().getString(rankNode + ".announcement", "{user} has ranked up");
                 getServer().broadcastMessage(ChatColor.AQUA + formatString(announcement, subs));
             }
