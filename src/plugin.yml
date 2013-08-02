@@ -1,6 +1,6 @@
 name: CmdRank
 main: me.flungo.bukkit.cmdrank.CmdRank
-version: 1.1.0
+version: 1.1.1
 author: flungo
 description: >
              Ranks up players by executing commands
