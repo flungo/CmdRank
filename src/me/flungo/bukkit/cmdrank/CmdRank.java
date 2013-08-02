@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
@@ -45,6 +46,7 @@ public class CmdRank extends JavaPlugin {
     private PluginDescriptionFile pdf;
     private PluginManager pm;
     private ConfigAccessor playersCA = null;
+    private ConfigAccessor messagesCA = null;
     public static Metrics metrics = null;
     public static Permission permission = null;
     public static Economy economy = null;
@@ -151,6 +153,9 @@ public class CmdRank extends JavaPlugin {
         getConfig().options().copyDefaults(true);
         saveConfig();
         playersCA = new ConfigAccessor(this, "player.yml");
+        messagesCA = new ConfigAccessor(this, "messages.yml");
+        messagesCA.getConfig().options().copyHeader(true);
+        messagesCA.saveConfig();
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -181,6 +186,34 @@ public class CmdRank extends JavaPlugin {
         playersCA.saveDefaultConfig();
     }
 
+    public FileConfiguration getMessageConfig() {
+        if (messagesCA == null) {
+            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+        }
+        return messagesCA.getConfig();
+    }
+
+    public void reloadMessageConfig() {
+        if (messagesCA == null) {
+            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+        }
+        messagesCA.reloadConfig();
+    }
+
+    public void saveMessageConfig() {
+        if (messagesCA == null) {
+            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+        }
+        messagesCA.saveConfig();
+    }
+
+    public void saveMessagePlayerConfig() {
+        if (messagesCA == null) {
+            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+        }
+        messagesCA.saveDefaultConfig();
+    }
+
     protected Permission getPermissions() {
         return permission;
     }
@@ -198,67 +231,76 @@ public class CmdRank extends JavaPlugin {
 
     public void showMatches(Player p) {
         List<String> matches = getMatches(p);
-        if (matches.isEmpty()) {
-            p.sendMessage(ChatColor.RED + "Your current rank does not allow you to rankup.");
-        } else {
-            List<String> messages = new ArrayList<>(matches.size() * 2 + 2);
-            int line = 0;
-            messages.add(ChatColor.YELLOW + "Available Rankups");
-            messages.add(ChatColor.YELLOW + "=================");
-            if (!getConfig().getBoolean("hide-messages.rankcheck.global-cooldown") && getCooldown(p) > 0) {
-                messages.add(ChatColor.DARK_AQUA + "Remaining cooldown: " + ChatColor.GREEN + (int) (getCooldown(p) / 1000L) + "s");
-            }
-            boolean matchshow = false;
-            for (String group : matches) {
-                //Check if enabled
-                if (getConfig().getBoolean("hide-messages.rankcheck.matches.disabled")
-                        && isRankDisabled(p, group)) {
-                    continue;
-                }
-                //Check if the is reranking and if they are allowed to
-                if (getConfig().getBoolean("hide-messages.rankcheck.matches.rerank")
-                        && !checkRerank(p, group)) {
-                    continue;
-                }
-                //Check if the player is subject to cooldown time
-                if (getConfig().getBoolean("hide-messages.rankcheck.matches.cooldown")
-                        && checkCooldown(p, group)) {
-                    continue;
-                }
-                //Check if requirements are met
-                if (getConfig().getBoolean("hide-messages.rankcheck.matches.requirements")
-                        && !checkRequirements(p, group)) {
-                    continue;
-                }
-                messages.add(null);
-                messages.add(ChatColor.RED + "Rankup from " + ChatColor.DARK_PURPLE + group + ChatColor.RED + ":");
-                if (!getConfig().getBoolean("hide-messages.rankcheck.description")
-                        && getConfig().contains("ranks." + group + ".description")) {
-                    messages.add(ChatColor.DARK_GREEN + "Description: " + ChatColor.GOLD + getConfig().getString("ranks." + group + ".description"));
-                }
-                if (!getConfig().getBoolean("hide-messages.rankcheck.requirements")) {
-                    messages.add(ChatColor.DARK_GREEN + "Requirements: " + ChatColor.GOLD + getRequirements(group));
-                }
-                if (!getConfig().getBoolean("hide-messages.rankcheck.cooldown")
-                        && getCooldown(p, group) > 0) {
-                    messages.add(ChatColor.DARK_GREEN + "Remaining cooldown: " + ChatColor.GOLD + (int) (getCooldown(p, group) / 1000L) + "s");
-                }
-                if (!getConfig().getBoolean("hide-messages.rankcheck.reranks")
-                        && getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks()) > 1) {
-                    messages.add(ChatColor.DARK_GREEN + "Remaining uses: " + ChatColor.GOLD + getRemainingReranks(p, group));
-                }
-                if (!getConfig().getBoolean("hide-messages.rankcheck.disabled")
-                        && isRankDisabled(group)) {
-                    messages.add(ChatColor.DARK_GREEN + "Disabled: " + ChatColor.GOLD + "true");
-                }
-                matchshow = true;
-            }
-            if (!matchshow) {
-                messages.add(null);
-                messages.add(ChatColor.RED + "No rankups to show");
-            }
-            p.sendMessage(messages.toArray(new String[messages.size()]));
+        List<String> messages = new ArrayList<>(matches.size() * 2 + 2);
+        int line = 0;
+        Map<String, String> globalSubs = new HashMap<>(1);
+        globalSubs.put("player", p.getName());
+        globalSubs.put("globalcoodown", formatTime(getCooldown(p)));
+        for (String header_line : getMessageConfig().getStringList("rankcheck.header")) {
+            messages.add(formatString(header_line, globalSubs));
         }
+        if (!getConfig().getBoolean("hide-messages.rankcheck.global-cooldown") && getCooldown(p) > 0) {
+            messages.add(formatString(getMessageConfig().getString("rankcheck.global-cooldown"), globalSubs));
+        }
+        boolean matchshow = false;
+        for (String group : matches) {
+            //Check if enabled
+            if (getConfig().getBoolean("hide-messages.rankcheck.matches.disabled")
+                    && isRankDisabled(p, group)) {
+                continue;
+            }
+            //Check if the is reranking and if they are allowed to
+            if (getConfig().getBoolean("hide-messages.rankcheck.matches.rerank")
+                    && !checkRerank(p, group)) {
+                continue;
+            }
+            //Check if the player is subject to cooldown time
+            if (getConfig().getBoolean("hide-messages.rankcheck.matches.cooldown")
+                    && checkCooldown(p, group)) {
+                continue;
+            }
+            //Check if requirements are met
+            if (getConfig().getBoolean("hide-messages.rankcheck.matches.requirements")
+                    && !checkRequirements(p, group)) {
+                continue;
+            }
+            Map<String, String> rankSubs = getRankSubs(p, group);
+            rankSubs.putAll(globalSubs);
+            messages.add(null);
+            messages.add(formatString(getMessageConfig().getString("rankcheck.rank.header"), rankSubs));
+            if (!getConfig().getBoolean("hide-messages.rankcheck.description")
+                    && getConfig().contains("ranks." + group + ".description")) {
+                messages.add(formatString(getMessageConfig().getString("rankcheck.rank.description"), rankSubs));
+            }
+            if (!getConfig().getBoolean("hide-messages.rankcheck.requirements")) {
+                messages.add(formatString(getMessageConfig().getString("rankcheck.rank.requirements"), rankSubs));
+            }
+            if (!getConfig().getBoolean("hide-messages.rankcheck.cooldown")
+                    && getCooldown(p, group) > 0) {
+                messages.add(formatString(getMessageConfig().getString("rankcheck.rank.cooldown"), rankSubs));
+            }
+            if (!getConfig().getBoolean("hide-messages.rankcheck.reranks")
+                    && getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks()) > 1) {
+                messages.add(formatString(getMessageConfig().getString("rankcheck.rank.reranks"), rankSubs));
+            }
+            if (!getConfig().getBoolean("hide-messages.rankcheck.disabled")
+                    && isRankDisabled(group)) {
+                messages.add(formatString(getMessageConfig().getString("rankcheck.rank.disabled"), rankSubs));
+            }
+            for (String additional_line : getMessageConfig().getStringList("rankcheck.rank.additional")) {
+                messages.add(formatString(additional_line, rankSubs));
+            }
+            matchshow = true;
+        }
+        if (!matchshow) {
+            messages.add(null);
+            messages.add(formatString(getMessageConfig().getString("rankcheck.norankups"), globalSubs));
+        }
+        messages.add(null);
+        for (String footer_line : getMessageConfig().getStringList("rankcheck.footer")) {
+            messages.add(formatString(footer_line, globalSubs));
+        }
+        p.sendMessage(messages.toArray(new String[messages.size()]));
     }
 
     public boolean rankup(Player p) {
@@ -266,55 +308,53 @@ public class CmdRank extends JavaPlugin {
         List<String> matches = getMatches(p);
         if (matches.isEmpty()) {
             if (!getConfig().getBoolean("hide-messages.rankup.not-available")) {
-                p.sendMessage(ChatColor.RED + "Your current rank does not allow you to rankup.");
+                p.sendMessage(formatString(getMessageConfig().getString("rankup.not-available"), null));
             }
             return false;
         }
         for (String group : matches) {
+            Map<String, String> rankSubs = getRankSubs(p, group);
             String rankNode = "ranks." + group;
             //Check if enabled
             if (isRankDisabled(p, group)) {
                 if (!getConfig().getBoolean("hide-messages.rankup.disabled")) {
-                    p.sendMessage(ChatColor.RED + "Rankup is currently disabled from " + ChatColor.DARK_PURPLE + group);
+                    p.sendMessage(formatString(getMessageConfig().getString("rankup.rank.disabled"), rankSubs));
                 }
                 continue;
             }
             //Check if the player is reranking and if they are allowed to
             if (!checkRerank(p, group)) {
                 if (!getConfig().getBoolean("hide-messages.rankup.rerank")) {
-                    p.sendMessage(ChatColor.RED + "You cannot rankup from " + ChatColor.DARK_PURPLE + group + ChatColor.RED + " again");
+                    p.sendMessage(formatString(getMessageConfig().getString("rankup.rank.rerank"), rankSubs));
                 }
                 continue;
             }
             //Check if the player is subject to cooldown time
             if (checkCooldown(p, group)) {
                 if (!getConfig().getBoolean("hide-messages.rankup.cooldown")) {
-                    p.sendMessage(ChatColor.RED + "You must wait before you can rankup from " + ChatColor.DARK_PURPLE + group);
+                    p.sendMessage(formatString(getMessageConfig().getString("rankup.rank.cooldown"), rankSubs));
                 }
                 continue;
             }
             //Check if requirements are met
             if (!checkRequirements(p, group)) {
                 if (!getConfig().getBoolean("hide-messages.rankup.requirements")) {
-                    p.sendMessage(ChatColor.RED + "You must meet the requirments to rankup: " + ChatColor.GOLD + getRequirements(group));
+                    p.sendMessage(formatString(getMessageConfig().getString("rankup.rank.requirements"), rankSubs));
                 }
                 continue;
             }
             //Use requirements where appropriate
             useRequirments(p, group);
-            //Setup substitutions
-            HashMap<String, String> subs = new HashMap<>();
-            subs.put("player", p.getName());
-            subs.put("rank", group);
             //Execute commands
             List<String> commands = getConfig().getStringList(rankNode + ".commands");
             for (String command : commands) {
-                getServer().dispatchCommand(Bukkit.getConsoleSender(), formatString(command, subs));
+                getServer().dispatchCommand(Bukkit.getConsoleSender(), formatString(command, rankSubs));
             }
             //Announce
             if (!getConfig().getBoolean("hide-messages.rankup.announcement")) {
-                String announcement = getConfig().getString(rankNode + ".announcement", "{user} has ranked up");
-                getServer().broadcastMessage(ChatColor.AQUA + formatString(announcement, subs));
+                String announcement = getConfig().getString(rankNode + ".announcement",
+                        getMessageConfig().getString("rankup.rank.announcement"));
+                getServer().broadcastMessage(formatString(announcement, rankSubs));
             }
             //Set last rankup for player in config
             long lastrankup = System.currentTimeMillis();
@@ -333,9 +373,9 @@ public class CmdRank extends JavaPlugin {
         }
         if (!getConfig().getBoolean("hide-messages.rankup.confirmation")) {
             if (rankedup) {
-                p.sendMessage(ChatColor.GREEN + "You have rankedup!");
+                p.sendMessage(formatString(getMessageConfig().getString("rankup.success"), null));
             } else {
-                p.sendMessage(ChatColor.RED + "You did not rankup.");
+                p.sendMessage(formatString(getMessageConfig().getString("rankup.failure"), null));
             }
         }
         return rankedup;
@@ -369,36 +409,48 @@ public class CmdRank extends JavaPlugin {
     public String getRequirements(String group) {
         List<String> requirements = new ArrayList<>(4); //Set array list size to number of requirements in program
         String reqNode = "ranks." + group + ".requirements";
-        if (economy != null && getConfig().getDouble(reqNode + ".money", 0) > 0) {
-            requirements.add(economy.format(getConfig().getDouble(reqNode + ".money")) + " money");
-        }
-        if (getConfig().getInt(reqNode + ".exp", 0) > 0) {
-            requirements.add(getConfig().getInt(reqNode + ".exp") + " xp points");
-        }
-        if (getConfig().getInt(reqNode + ".health", 0) > 0) {
-            int health = getConfig().getInt(reqNode + ".health");
-            float hearts = health / 2;
-            requirements.add(health + " hit points (" + hearts + " hearts)");
-        }
-        if (getConfig().getInt(reqNode + ".hunger", 0) > 0) {
-            int hunger = getConfig().getInt(reqNode + ".hunger");
-            requirements.add(hunger + " hunger");
-        }
-        if (requirements.isEmpty()) {
-            return "No requirements!";
-        }
         String requirmentsString = "";
-        for (int i = 0; i < requirements.size(); i++) {
-            requirmentsString += requirements.get(i);
-            if (i != (requirements.size() - 1)) {
-                if (i == (requirements.size() - 2)) {
-                    requirmentsString += " and ";
-                } else {
-                    requirmentsString += ", ";
+        // Get terms
+        Map<String, String> terms = new HashMap<>();
+        terms.put("money", getMessageConfig().getString("requirements.terms.money"));
+        terms.put("exp", getMessageConfig().getString("requirements.terms.exp"));
+        terms.put("health", getMessageConfig().getString("requirements.terms.health"));
+        terms.put("hunger", getMessageConfig().getString("requirements.terms.hunger"));
+        terms.put("and", getMessageConfig().getString("requirements.terms.and"));
+        terms.put("none", getMessageConfig().getString("requirements.terms.none"));
+        if (getMessageConfig().getBoolean("requirements.overide")) {
+            requirmentsString = getMessageConfig().getString("requirements.string");
+        } else {
+            if (economy != null && getConfig().getDouble(reqNode + ".money", 0) > 0) {
+                requirements.add(economy.format(getConfig().getDouble(reqNode + ".money")) + " {money}");
+            }
+            if (getConfig().getInt(reqNode + ".exp", 0) > 0) {
+                requirements.add(getConfig().getInt(reqNode + ".exp") + " {exp}");
+            }
+            if (getConfig().getInt(reqNode + ".health", 0) > 0) {
+                int health = getConfig().getInt(reqNode + ".health");
+                float hearts = health / 2;
+                requirements.add(health + " hit points (" + hearts + " {health})");
+            }
+            if (getConfig().getInt(reqNode + ".hunger", 0) > 0) {
+                int hunger = getConfig().getInt(reqNode + ".hunger");
+                requirements.add(hunger + " {hunger}");
+            }
+            if (requirements.isEmpty()) {
+                return "{none}";
+            }
+            for (int i = 0; i < requirements.size(); i++) {
+                requirmentsString += requirements.get(i);
+                if (i != (requirements.size() - 1)) {
+                    if (i == (requirements.size() - 2)) {
+                        requirmentsString += " {and} ";
+                    } else {
+                        requirmentsString += ", ";
+                    }
                 }
             }
         }
-        return requirmentsString;
+        return formatString(requirmentsString, terms);
     }
 
     public void useRequirments(Player p, String group) {
@@ -491,7 +543,7 @@ public class CmdRank extends JavaPlugin {
         }
     }
 
-    private int getRemainingReranks(Player p, String group) {
+    private Integer getRemainingReranks(Player p, String group) {
         if (getConfig().getInt("ranks." + group + ".reranks", getDefaultReranks()) >= 0) {
             if (!getConfig().getBoolean("rerank", true)
                     || getPlayerConfig().getInt(p.getName() + ".ranks." + group + ".rankups", 0) > 0) {
@@ -518,6 +570,41 @@ public class CmdRank extends JavaPlugin {
             return false;
         }
         return true;
+    }
+    
+    public Map<String, String> getRankSubs(Player p, String group) {
+            Map<String, String> rankSubs = new HashMap<>();
+            rankSubs.put("group", group);
+            rankSubs.put("rank", group);
+            rankSubs.put("player", p.getName());
+            rankSubs.put("user", p.getName());
+            rankSubs.put("description", getConfig().getString("ranks." + group + ".description"));
+            rankSubs.put("requirements", getRequirements(group));
+            rankSubs.put("cooldown", formatTime(getCooldown(p, group)));
+            rankSubs.put("rankups", getRemainingReranks(p, group).toString());
+            return rankSubs;
+    }
+
+    public String formatTime(long time) {
+        Map<String, String> times = new HashMap<>();
+        Long s = new Long(TimeUnit.MILLISECONDS.toSeconds(time));
+        Long m = new Long(TimeUnit.MILLISECONDS.toMinutes(time));
+        Long h = new Long(TimeUnit.MILLISECONDS.toHours(time));
+        Long d = new Long(TimeUnit.MILLISECONDS.toDays(time));
+        times.put("s", s.toString());
+        times.put("m", m.toString());
+        times.put("h", h.toString());
+        times.put("d", d.toString());
+        if (d > 0) {
+            return formatString(getMessageConfig().getString("time.days"), times);
+        }
+        if (h > 0) {
+            return formatString(getMessageConfig().getString("time.hours"), times);
+        }
+        if (m > 0) {
+            return formatString(getMessageConfig().getString("time.minutes"), times);
+        }
+        return formatString(getMessageConfig().getString("time.seconds"), times);
     }
 
     public static String formatString(String message, Map<String, String> subs) {
