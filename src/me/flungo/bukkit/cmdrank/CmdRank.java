@@ -322,6 +322,7 @@ public class CmdRank extends JavaPlugin {
             //Add this rankup to the player's rankup history
             String playerRankNode = p.getName() + ".ranks." + group;
             getPlayerConfig().set(playerRankNode + ".lastrankup", lastrankup);
+            //Increment number of rankups for rank
             String playerRankRankupsNode = playerRankNode + ".rankups";
             int playerRankRankups = getPlayerConfig().getInt(playerRankRankupsNode, 0);
             getPlayerConfig().set(playerRankRankupsNode, ++playerRankRankups);
@@ -435,7 +436,8 @@ public class CmdRank extends JavaPlugin {
 
     private long getCooldown(Player p, String group) {
         if (permission.has(p, "cmdrank.bypass.cooldown")
-                || getConfig().getLong("ranks." + group + ".cooldown", 0L) <= 0) {
+                || (getConfig().getLong("ranks." + group + ".cooldown", 0L) <= 0
+                && getConfig().getLong("ranks." + group + ".global-cooldown", 0L) <= 0)) {
             return 0;
         }
         long localCooldown = getPlayerConfig().getLong(p.getName() + ".ranks." + group + ".lastrankup", 0L)
