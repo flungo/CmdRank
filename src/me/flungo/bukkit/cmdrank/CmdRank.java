@@ -371,10 +371,12 @@ public class CmdRank extends JavaPlugin {
             //Player has been ranked up, set the flag
             rankedup = true;
         }
-        if (!getConfig().getBoolean("hide-messages.rankup.confirmation")) {
-            if (rankedup) {
+        if (rankedup) {
+            if (!getConfig().getBoolean("hide-messages.rankup.success")) {
                 p.sendMessage(formatString(getMessageConfig().getString("rankup.success"), null));
-            } else {
+            }
+        } else {
+            if (!getConfig().getBoolean("hide-messages.rankup.failure")) {
                 p.sendMessage(formatString(getMessageConfig().getString("rankup.failure"), null));
             }
         }
@@ -571,18 +573,18 @@ public class CmdRank extends JavaPlugin {
         }
         return true;
     }
-    
+
     public Map<String, String> getRankSubs(Player p, String group) {
-            Map<String, String> rankSubs = new HashMap<>();
-            rankSubs.put("group", group);
-            rankSubs.put("rank", group);
-            rankSubs.put("player", p.getName());
-            rankSubs.put("user", p.getName());
-            rankSubs.put("description", getConfig().getString("ranks." + group + ".description"));
-            rankSubs.put("requirements", getRequirements(group));
-            rankSubs.put("cooldown", formatTime(getCooldown(p, group)));
-            rankSubs.put("rankups", getRemainingReranks(p, group).toString());
-            return rankSubs;
+        Map<String, String> rankSubs = new HashMap<>();
+        rankSubs.put("group", group);
+        rankSubs.put("rank", group);
+        rankSubs.put("player", p.getName());
+        rankSubs.put("user", p.getName());
+        rankSubs.put("description", getConfig().getString("ranks." + group + ".description"));
+        rankSubs.put("requirements", getRequirements(group));
+        rankSubs.put("cooldown", formatTime(getCooldown(p, group)));
+        rankSubs.put("rankups", getRemainingReranks(p, group).toString());
+        return rankSubs;
     }
 
     public String formatTime(long time) {

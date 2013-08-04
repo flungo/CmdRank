@@ -57,8 +57,10 @@ hide-messages:
     requirements: false
     #Hide announcement of rankup
     announcement: false
-    #Hide confirmation of rankup
-    confirmation: false
+    #Hide confirmation of successful rankup
+    success: false
+    #Hide confirmation of failed rankup
+    failure: false
   #Messages during /rankcheck command -  note that if not configured or not relevant, lines will be automatically hidden anyway
   rankcheck:
     #Hide how long before any rankup can take place
