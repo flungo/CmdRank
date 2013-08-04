@@ -190,28 +190,28 @@ public class CmdRank extends JavaPlugin {
 
     public FileConfiguration getMessageConfig() {
         if (messagesCA == null) {
-            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+            throw new IllegalStateException("Plugin has not initialised the Messages Config Accessor");
         }
         return messagesCA.getConfig();
     }
 
     public void reloadMessageConfig() {
         if (messagesCA == null) {
-            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+            throw new IllegalStateException("Plugin has not initialised the Messages Config Accessor");
         }
         messagesCA.reloadConfig();
     }
 
     public void saveMessageConfig() {
         if (messagesCA == null) {
-            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+            throw new IllegalStateException("Plugin has not initialised the Messages Config Accessor");
         }
         messagesCA.saveConfig();
     }
 
     public void saveMessagePlayerConfig() {
         if (messagesCA == null) {
-            throw new IllegalStateException("Plugin has not initialised the Player Config Accessor");
+            throw new IllegalStateException("Plugin has not initialised the Messages Config Accessor");
         }
         messagesCA.saveDefaultConfig();
     }
@@ -235,7 +235,7 @@ public class CmdRank extends JavaPlugin {
         List<String> matches = getMatches(p);
         List<String> messages = new ArrayList<>(matches.size() * 2 + 2);
         int line = 0;
-        Map<String, String> globalSubs = new HashMap<>(1);
+        Map<String, String> globalSubs = new HashMap<>(getGlobalSubs());
         globalSubs.put("player", p.getName());
         globalSubs.put("globalcoodown", formatTime(getCooldown(p)));
         for (String header_line : getMessageConfig().getStringList("rankcheck.header")) {
@@ -307,10 +307,12 @@ public class CmdRank extends JavaPlugin {
 
     public boolean rankup(Player p) {
         boolean rankedup = false;
+        Map<String, String> subs = new HashMap<>(getGlobalSubs());
+        subs.put("player", p.getName());
         List<String> matches = getMatches(p);
         if (matches.isEmpty()) {
             if (!getConfig().getBoolean("hide-messages.rankup.not-available")) {
-                p.sendMessage(formatString(getMessageConfig().getString("rankup.not-available"), null));
+                p.sendMessage(formatString(getMessageConfig().getString("rankup.not-available"), subs));
             }
             return false;
         }
@@ -375,11 +377,11 @@ public class CmdRank extends JavaPlugin {
         }
         if (rankedup) {
             if (!getConfig().getBoolean("hide-messages.rankup.success")) {
-                p.sendMessage(formatString(getMessageConfig().getString("rankup.success"), null));
+                p.sendMessage(formatString(getMessageConfig().getString("rankup.success"), subs));
             }
         } else {
             if (!getConfig().getBoolean("hide-messages.rankup.failure")) {
-                p.sendMessage(formatString(getMessageConfig().getString("rankup.failure"), null));
+                p.sendMessage(formatString(getMessageConfig().getString("rankup.failure"), subs));
             }
         }
         return rankedup;
@@ -415,7 +417,7 @@ public class CmdRank extends JavaPlugin {
         String reqNode = "ranks." + group + ".requirements";
         String requirmentsString = "";
         // Get terms
-        Map<String, String> terms = new HashMap<>();
+        Map<String, String> terms = new HashMap<>(getGlobalSubs());
         terms.put("money", getMessageConfig().getString("requirements.terms.money"));
         terms.put("exp", getMessageConfig().getString("requirements.terms.exp"));
         terms.put("health", getMessageConfig().getString("requirements.terms.health"));
@@ -575,9 +577,18 @@ public class CmdRank extends JavaPlugin {
         }
         return true;
     }
+    
+    public Map<String, String> getGlobalSubs() {
+        Map<String, String> subs = new HashMap<>();
+        ConfigurationSection varsSection = getConfig().createSection("global-vars");
+        for (String variable : varsSection.getKeys(true)) {
+            subs.put("global." + variable, varsSection.getString(variable));
+        }
+        return subs;
+    }
 
     public Map<String, String> getRankSubs(Player p, String group) {
-        Map<String, String> rankSubs = new HashMap<>();
+        Map<String, String> rankSubs = new HashMap<>(getGlobalSubs());
         rankSubs.put("group", group);
         rankSubs.put("rank", group);
         rankSubs.put("player", p.getName());

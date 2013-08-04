@@ -1,14 +1,19 @@
-# CmdRank Messages (Ref: 
+# CmdRank Messages (Ref: http://dev.bukkit.org/bukkit-plugins/cmdrank/pages/messages-yml/ )
+# Global variables for usage anywhere - you can create whatever you like here
+global-vars:
+  # Available as {global.plugin} from any string (in here or in 
+  plugin: 'CmdRank'
 # Messages during /rankup commands
-# Variables:
-#   - {group} name of the matched group
-#   - {player} name of the player
-#   - {description} description of the rankup
-#   - {requirements} requirements string
-#   - {cooldown} remaining cooldown
-#   - {rankups} remaining rankups
 rankup:
   not-available: '&cYour current rank does not allow you to rankup.'
+  # Repeated for each matched rank
+  # Variables:
+  #   - {group} name of the matched group
+  #   - {player} name of the player
+  #   - {description} description of the rankup
+  #   - {requirements} requirements string
+  #   - {cooldown} remaining cooldown
+  #   - {rankups} remaining rankups
   rank:
     disabled: '&cRankup is currently disabled from &5{group}'
     rerank: '&cYou cannot rankup from &5{group}&c again'
@@ -23,8 +28,8 @@ rankup:
 #   - {global-cooldown} time string for remaining global-cooldown
 rankcheck:
   header:
-    - '&eAvailable Rankups'
-    - '&e================='
+  - '&eAvailable Rankups'
+  - '&e================='
   global-cooldown: '&3Remaining cooldown: &a{global-cooldown}'
   # Repeated for each matched rank
   # Variables:
