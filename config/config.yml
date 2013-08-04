@@ -85,6 +85,12 @@ hide-messages:
     reranks: false
     #Hide disabled status of rankup
     disabled: false
+#Aliases for commands
+aliases:
+  rankup:
+    - rup
+  rankcheck:
+    - rcheck
 #Is the plugin enabled (i.e. Can players use it)
 enable: true
 #Display extra information in the console for debugging

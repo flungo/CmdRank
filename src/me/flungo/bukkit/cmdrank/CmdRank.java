@@ -43,8 +43,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class CmdRank extends JavaPlugin {
 
-    private PluginDescriptionFile pdf;
-    private PluginManager pm;
     private ConfigAccessor playersCA = null;
     private ConfigAccessor messagesCA = null;
     public static Metrics metrics = null;
@@ -54,22 +52,26 @@ public class CmdRank extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        getLogger().log(Level.INFO, "{0} is now disabled", pdf.getName());
+        getLogger().log(Level.INFO, "{0} is now disabled", getDescription().getName());
     }
 
     @Override
     public void onEnable() {
-        pdf = this.getDescription();
         setupMetrics();
         setupPermissions();
         setupEconomy();
-        pm = getServer().getPluginManager();
         CommandExecutor ce = new Commands(this);
         getCommand("rankup").setExecutor(ce);
+        for (String alias : getConfig().getStringList("aliases.rankup")) {
+            getCommand(alias).setExecutor(ce);
+        }
         getCommand("rankcheck").setExecutor(ce);
+        for (String alias : getConfig().getStringList("aliases.rankcheck")) {
+            getCommand(alias).setExecutor(ce);
+        }
         getCommand("cmdrank").setExecutor(ce);
         setupConfig();
-        getLogger().log(Level.INFO, "{0} version {1} is enabled.", new Object[]{pdf.getName(), pdf.getVersion()});
+        getLogger().log(Level.INFO, "{0} version {1} is enabled.", new Object[]{getDescription().getName(), getDescription().getVersion()});
         setupColourSubs();
     }
 
@@ -132,7 +134,7 @@ public class CmdRank extends JavaPlugin {
     }
 
     public void setupConfig() {
-        getConfig().options().header(pdf.getName() + " Config File");
+        getConfig().options().header(getDescription().getName() + " Config File");
         // If there aren't any ranks defined, consturct a default rankup for refference
         if (!getConfig().contains("ranks")) {
             ConfigurationSection defaultRank = getConfig().createSection("ranks.default");

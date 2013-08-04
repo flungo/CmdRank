@@ -16,6 +16,7 @@
  */
 package me.flungo.bukkit.cmdrank;
 
+import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,52 +29,58 @@ import org.bukkit.entity.Player;
  */
 class Commands implements CommandExecutor {
 
-	private CmdRank plugin;
+    private CmdRank plugin;
 
-	public Commands(CmdRank plugin) {
-		this.plugin = plugin;
-	}
+    public Commands(CmdRank plugin) {
+        this.plugin = plugin;
+    }
 
-	@Override
-	public boolean onCommand(CommandSender cs, Command cmnd, String string, String[] strings) {
-		switch (cmnd.getName()) {
-			case "rankup":
-				if (cs instanceof Player) {
-					Player p = (Player) cs;
-					if (!CmdRank.permission.has(p, "cmdrank.rankup")) {
-						p.sendMessage(ChatColor.RED + "You do not have permission to rankup");
-					}
-					plugin.rankup(p);
-				} else {
-					cs.sendMessage(ChatColor.RED + "This can only be executed in game.");
-				}
-				return true;
-			case "rankcheck":
-				if (cs instanceof Player) {
-					Player p = (Player) cs;
-					if (!CmdRank.permission.has(p, "cmdrank.rankup")) {
-						p.sendMessage(ChatColor.RED + "You do not have permission to rankup");
-					}
-					plugin.showMatches(p);
-				} else {
-					cs.sendMessage(ChatColor.RED + "This can only be executed in game.");
-				}
-				return true;
-			case "cmdrank":
-				if (cs instanceof Player && !CmdRank.permission.has((Player) cs, "cmdrank.admin")) {
-					cs.sendMessage(ChatColor.RED + "You do not have permission to do that");
-					return true;
-				}
-				if (strings.length < 1) {
-					return false;
-				}
-				switch (strings[0]) {
-					case "reload":
-						plugin.reload();
-						cs.sendMessage(ChatColor.GREEN + "CmdRank Reloaded.");
-						return true;
-				}
-		}
-		return false;
-	}
+    @Override
+    public boolean onCommand(CommandSender cs, Command cmnd, String string, String[] strings) {
+        List<String> rankupCommands = plugin.getConfig().getStringList("aliases.rankup");
+        rankupCommands.add("rankup");
+        if (rankupCommands.contains(string)) {
+            if (cs instanceof Player) {
+                Player p = (Player) cs;
+                if (!CmdRank.permission.has(p, "cmdrank.rankup")) {
+                    p.sendMessage(ChatColor.RED + "You do not have permission to rankup");
+                }
+                plugin.rankup(p);
+            } else {
+                cs.sendMessage(ChatColor.RED + "This can only be executed in game.");
+            }
+            return true;
+        }
+        List<String> rankcheckCommands = plugin.getConfig().getStringList("aliases.rankcheck");
+        rankcheckCommands.add("rankcheck");
+        if (rankcheckCommands.contains(string)) {
+            if (cs instanceof Player) {
+                Player p = (Player) cs;
+                if (!CmdRank.permission.has(p, "cmdrank.rankup")) {
+                    p.sendMessage(ChatColor.RED + "You do not have permission to rankup");
+                }
+                plugin.showMatches(p);
+            } else {
+                cs.sendMessage(ChatColor.RED + "This can only be executed in game.");
+            }
+            return true;
+        }
+        if (string.equals("cmdrank")) {
+            if (cs instanceof Player && !CmdRank.permission.has((Player) cs, "cmdrank.admin")) {
+                cs.sendMessage(ChatColor.RED + "You do not have permission to do that");
+                return true;
+            }
+            if (strings.length < 1) {
+                return false;
+            }
+            switch (strings[0]) {
+                case "reload":
+                    plugin.reload();
+                    cs.sendMessage(ChatColor.GREEN + "CmdRank Reloaded.");
+                    return true;
+            }
+            return false;
+        }
+        return false;
+    }
 }
